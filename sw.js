@@ -4,7 +4,7 @@
  * (Saved data lives in localStorage and is never touched here.)
  */
 
-const VERSION = '2026-11-24-2';
+const VERSION = '2026-11-24-3';
 const CACHE = 'calories-' + VERSION;
 const FILES = [
   './',

@@ -8,6 +8,7 @@ import {
   getSettings,
 } from './store.js';
 import { fmtDec, fmtDate, fmtShort, openSheet, toast, readNumber } from './ui.js';
+import { goalProgress, overallGoalCard } from './goals.js';
 
 const RANGES = [
   { key: '1m', label: '1M', days: 30 },
@@ -50,6 +51,7 @@ export function renderBody(el, ctx) {
   const list = [...entries].reverse();
   el.innerHTML = `
     <header class="topbar plain"><div class="topbar-title"><div class="t1">Body</div></div></header>
+    ${overallGoalCard(goalProgress())}
     <div class="seg" role="tablist">
       ${RANGES.map((r) => `<button class="${r.key === range.key ? 'on' : ''}" data-range="${r.key}">${r.label}</button>`).join('')}
     </div>
@@ -67,6 +69,8 @@ export function renderBody(el, ctx) {
 
   el.querySelectorAll('[data-range]').forEach((b) => { b.onclick = () => ctx.setBodyRange(b.dataset.range); });
   el.querySelector('[data-act="add"]').onclick = () => editSheet(null, ctx);
+  const setGoals = el.querySelector('[data-act="set-goals"]');
+  if (setGoals) setGoals.onclick = () => ctx.goTab('settings');
   el.querySelectorAll('[data-edit]').forEach((b) => {
     b.onclick = () => editSheet(entries.find((e) => e.id === b.dataset.edit), ctx);
   });

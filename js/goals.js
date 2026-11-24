@@ -1,6 +1,6 @@
 /*
  * goals.js — weight goals: overall (start → goal weight), this week (Mon–Sun) and this month.
- * Calculates progress from the weight entries and draws the progress bars on the Today screen.
+ * Calculates progress from the weight entries and draws the bars: week + month on Today, overall on Body.
  *
  * Week/month progress = last weight before the period started → latest weight in the period
  * (if there is no weight before it, the first weight inside the period is the starting point).
@@ -81,28 +81,35 @@ function periodBar(label, p, verb, word) {
   return bar(label, p.done / p.total, reached, `${kg(p.done)} of ${kg(p.total)} ${verb}`);
 }
 
-/** The card under "Add calories" (Today screen). */
-export function goalsCard(p) {
-  if (!p.any) {
-    return '<button class="card goals-empty" data-act="set-goals">Set weight goals <span aria-hidden="true">›</span></button>';
-  }
+const setLink = (text) =>
+  `<button class="card goals-empty" data-act="set-goals">${text} <span aria-hidden="true">›</span></button>`;
+
+/** Weekly and monthly bars, under "Add calories" on the Today screen. */
+export function shortGoalsCard(p) {
+  if (!p.week && !p.month) return p.any ? '' : setLink('Set weight goals');
   const verb = p.lose ? 'lost' : 'gained';
   let html = '';
-  if (p.overall) {
-    const o = p.overall;
-    if (o.done === null) {
-      html += bar('Overall', 0, false, 'Add your weight in Body', 'muted');
-    } else if (o.done < 0) {
-      html += bar('Overall', 0, false,
-        `${kg(o.current)} — ${kg(o.done)} ${p.lose ? 'above' : 'below'} your start · goal ${kg(o.target)}`, 'red');
-    } else {
-      const reached = o.total === 0 || o.done >= o.total - 1e-9;
-      html += bar('Overall', o.total ? o.done / o.total : 1, reached,
-        reached ? `Goal weight ${kg(o.target)} reached`
-          : `${kg(o.done)} of ${kg(o.total)} ${verb} · now ${kg(o.current)}, goal ${kg(o.target)}`);
-    }
-  }
   if (p.week) html += periodBar('This week', p.week, verb, 'week');
   if (p.month) html += periodBar('This month', p.month, verb, 'month');
+  return `<section class="card goals">${html}</section>`;
+}
+
+/** The long-term goal bar (start weight → goal weight), on the Body screen. */
+export function overallGoalCard(p) {
+  if (!p.overall) return setLink('Set a goal weight');
+  const o = p.overall;
+  const verb = p.lose ? 'lost' : 'gained';
+  let html;
+  if (o.done === null) {
+    html = bar('Goal weight', 0, false, 'Add your weight to see your progress', 'muted');
+  } else if (o.done < 0) {
+    html = bar('Goal weight', 0, false,
+      `${kg(o.current)} — ${kg(o.done)} ${p.lose ? 'above' : 'below'} your start · goal ${kg(o.target)}`, 'red');
+  } else {
+    const reached = o.total === 0 || o.done >= o.total - 1e-9;
+    html = bar('Goal weight', o.total ? o.done / o.total : 1, reached,
+      reached ? `Goal weight ${kg(o.target)} reached`
+        : `${kg(o.done)} of ${kg(o.total)} ${verb} · now ${kg(o.current)}, goal ${kg(o.target)}`);
+  }
   return `<section class="card goals">${html}</section>`;
 }

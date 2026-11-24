@@ -8,7 +8,7 @@ import {
   weightOn, stepCalories, DEFAULT_WEIGHT,
 } from './store.js';
 import { fmt, fmtDay, fmtTime, ringSVG, openSheet, toast, readNumber, fmtDec } from './ui.js';
-import { goalProgress, goalsCard } from './goals.js';
+import { goalProgress, shortGoalsCard } from './goals.js';
 
 function title(k) {
   const t = todayKey();
@@ -70,7 +70,7 @@ export function renderToday(el, ctx) {
       <button type="submit" class="btn-primary">Add</button>
     </form>
 
-    ${isToday ? goalsCard(goalProgress()) : ''}
+    ${isToday ? shortGoalsCard(goalProgress()) : ''}
 
     <section class="card list">
       ${food.length ? food.map((f) => `
