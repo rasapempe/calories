@@ -2,7 +2,8 @@
  * store.js — all app data: load/save on the phone, calculations, backup.
  *
  * Data lives in localStorage under one key, as one JSON object:
- *   { schema, settings: {goal, stepBase}, days: {"YYYY-MM-DD": day}, body: [entry], lastBackup }
+ *   { schema, settings: {goal, stepBase, goalWeight, goalStartWeight, goalStartDate, weeklyKg, monthlyKg},
+ *     days: {"YYYY-MM-DD": day}, body: [entry], lastBackup }
  *   day   = { food: [{id, kcal, t}], steps: number|null, goal, stepBase }  (goal/base frozen per day)
  *   entry = { id, date: "YYYY-MM-DD", t, weight?, waist?, hips?, chest?, arm?, thigh? }
  *
@@ -13,7 +14,15 @@
 const KEY = 'calorie-tracker-data';
 const SCHEMA = 1;
 
-export const DEFAULT_SETTINGS = { goal: 1450, stepBase: 3000 };
+export const DEFAULT_SETTINGS = {
+  goal: 1450,
+  stepBase: 3000,
+  goalWeight: null,       // kg; weight goals added in version 1.1 (null = not set)
+  goalStartWeight: null,  // kg, weight when the overall goal was set
+  goalStartDate: null,    // "YYYY-MM-DD"
+  weeklyKg: null,         // kg to lose (or gain) per Mon–Sun week
+  monthlyKg: null,        // kg per calendar month
+};
 export const DEFAULT_WEIGHT = 70;          // kg, used for step calories until a weight is entered
 export const KCAL_PER_STEP_PER_KG = 0.0005; // ≈ 35 kcal per 1,000 steps at 70 kg
 

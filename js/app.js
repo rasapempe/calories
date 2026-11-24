@@ -25,6 +25,7 @@ const ctx = {
   get historyMonth() { return state.historyMonth; },
   get bodyRange() { return state.bodyRange; },
   refresh: render,
+  goTab: (tab) => showTab(tab),
   currentDay() {
     if (state.followToday && state.date !== todayKey()) state.date = todayKey();
     return state.date;

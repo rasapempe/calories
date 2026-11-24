@@ -5,6 +5,7 @@
 
 import {
   MEASURES, bodyEntries, saveBodyEntry, deleteBodyEntry, latestValue, todayKey, addDays, parseKey, dateKey,
+  getSettings,
 } from './store.js';
 import { fmtDec, fmtDate, fmtShort, openSheet, toast, readNumber } from './ui.js';
 
@@ -20,6 +21,7 @@ export function renderBody(el, ctx) {
   const today = todayKey();
   const entries = bodyEntries();
   const from = range.days ? addDays(today, -range.days) : (entries[0]?.date || today);
+  const { goalWeight } = getSettings();
 
   const charts = MEASURES.map((m) => {
     const pts = entries
@@ -41,7 +43,7 @@ export function renderBody(el, ctx) {
           <div class="chart-latest">${latest === null ? '' : `${fmtDec(latest)} <span class="unit">${m.unit}</span>`}</div>
         </div>
         <div class="chart-change">${change}</div>
-        ${pts.length ? chartSVG(pts, from, today, range.days === null) : `<div class="chart-empty">${latest === null ? 'No entries yet' : 'No entries in this period'}</div>`}
+        ${pts.length ? chartSVG(pts, from, today, range.days === null, m.key === 'weight' ? goalWeight : null) : `<div class="chart-empty">${latest === null ? 'No entries yet' : 'No entries in this period'}</div>`}
       </section>`;
   }).join('');
 
@@ -142,7 +144,7 @@ function editSheet(entry, ctx) {
 
 /* ---------- line chart (plain SVG, works offline) ---------- */
 
-function chartSVG(pts, from, to, isAll) {
+function chartSVG(pts, from, to, isAll, goal = null) {
   const W = 340;
   const H = 150;
   const L = 40;
@@ -155,6 +157,7 @@ function chartSVG(pts, from, to, isAll) {
 
   let lo = Math.min(...pts.map((p) => p.v));
   let hi = Math.max(...pts.map((p) => p.v));
+  if (goal !== null) { lo = Math.min(lo, goal); hi = Math.max(hi, goal); }
   if (hi - lo < 1) { const mid = (hi + lo) / 2; lo = mid - 0.5; hi = mid + 0.5; }
   const pad = (hi - lo) * 0.15;
   lo -= pad;
@@ -175,6 +178,14 @@ function chartSVG(pts, from, to, isAll) {
     <text x="${(L + W - R) / 2}" y="${H - 6}" class="axis" text-anchor="middle">${fmtShort(midK, withYear)}</text>
     <text x="${W - R}" y="${H - 6}" class="axis" text-anchor="end">${fmtShort(to, withYear)}</text>`;
 
+  let goalLine = '';
+  if (goal !== null) {
+    const gy = y(goal);
+    const ty = gy < T + 14 ? gy + 14 : gy - 6;
+    goalLine = `<line x1="${L}" x2="${W - R}" y1="${gy.toFixed(1)}" y2="${gy.toFixed(1)}" class="goal-line"/>
+      <text x="${W - R}" y="${ty.toFixed(1)}" class="goal-tag" text-anchor="end">goal ${fmtDec(goal)}</text>`;
+  }
+
   const coords = pts.map((p) => [x(p.date), y(p.v)]);
   const line = coords.map((c, i) => `${i ? 'L' : 'M'}${c[0].toFixed(1)} ${c[1].toFixed(1)}`).join('');
   const area = coords.length > 1
@@ -188,7 +199,7 @@ function chartSVG(pts, from, to, isAll) {
   }).join('');
 
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" aria-hidden="true">
-    ${grid}${xLabels}${area}
+    ${grid}${xLabels}${area}${goalLine}
     <path d="${line}" class="line"/>
     ${dots}
   </svg>`;

@@ -175,6 +175,24 @@ button { touch-action: manipulation; cursor: pointer; }
 .row-btn:active { opacity: 0.6; }
 .empty { color: var(--text-2); text-align: center; padding: 18px 0; }
 
+/* weight goal bars (Today) */
+.goals { padding: 14px 16px 6px; }
+.goal { margin-bottom: 12px; }
+.goal-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.goal-label { font-size: 15px; font-weight: 700; }
+.goal-pct { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-2); }
+.goal-bar { height: 10px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.goal-fill { height: 100%; border-radius: 999px; background: var(--accent); min-width: 0; transition: width 0.3s; }
+.goal-fill.done { background: var(--green); }
+.goal-text { font-size: 13px; color: var(--text-2); margin-top: 5px; font-variant-numeric: tabular-nums; }
+.goal-text.red { color: var(--red); }
+.goal-text.muted { color: var(--text-3); }
+.goals-empty {
+  display: flex; justify-content: space-between; align-items: center; width: 100%;
+  border: 0; color: var(--accent); font-size: 16px; font-weight: 600; text-align: left;
+}
+.goals-empty:active { opacity: 0.7; }
+
 /* ---------- History calendar ---------- */
 
 .cal { padding: 12px 8px 6px; }
@@ -236,6 +254,8 @@ button { touch-action: manipulation; cursor: pointer; }
 .chart .area { fill: var(--accent); opacity: 0.1; }
 .chart .dot { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
 .chart .dot.last { fill: var(--accent); }
+.chart .goal-line { stroke: var(--green); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.chart .goal-tag { fill: var(--green); font-size: 11px; font-weight: 700; }
 .chart-empty { color: var(--text-3); text-align: center; padding: 26px 0 18px; font-size: 14px; }
 
 /* ---------- forms and buttons ---------- */

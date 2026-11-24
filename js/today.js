@@ -8,6 +8,7 @@ import {
   weightOn, stepCalories, DEFAULT_WEIGHT,
 } from './store.js';
 import { fmt, fmtDay, fmtTime, ringSVG, openSheet, toast, readNumber, fmtDec } from './ui.js';
+import { goalProgress, goalsCard } from './goals.js';
 
 function title(k) {
   const t = todayKey();
@@ -69,6 +70,8 @@ export function renderToday(el, ctx) {
       <button type="submit" class="btn-primary">Add</button>
     </form>
 
+    ${isToday ? goalsCard(goalProgress()) : ''}
+
     <section class="card list">
       ${food.length ? food.map((f) => `
         <div class="row">
@@ -84,6 +87,8 @@ export function renderToday(el, ctx) {
   const back = el.querySelector('[data-act="today"]');
   if (back) back.onclick = () => ctx.setDate(todayKey());
   el.querySelector('[data-act="steps"]').onclick = () => stepsSheet(k, s, ctx);
+  const setGoals = el.querySelector('[data-act="set-goals"]');
+  if (setGoals) setGoals.onclick = () => ctx.goTab('settings');
 
   const form = el.querySelector('.add-form');
   const input = el.querySelector('#kcal');

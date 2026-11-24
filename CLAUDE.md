@@ -9,7 +9,7 @@ Installed on the phone from Chrome via Share → Add to Home Screen; always open
 
 **Files:** `index.html`, `styles.css` (always dark), `js/app.js` (tabs, state), `js/store.js`
 (all data + calculations), `js/today.js`, `js/history.js`, `js/body.js` (graphs), `js/settings.js`
-(goal, step base, backup), `sw.js` (offline), `manifest.webmanifest`, `icons/`.
+(goal, step base, weight goals, backup), `js/goals.js` (weight goal bars), `sw.js` (offline), `manifest.webmanifest`, `icons/`.
 
 ## Rules
 
@@ -30,3 +30,5 @@ Installed on the phone from Chrome via Share → Add to Home Screen; always open
 - Step calories = max(0, steps − base) × weight kg × 0.0005, weight = latest entry on or before
   that day (70 kg until one exists).
 - Day color: green if eaten ≤ budget, red if over, grey if no food entered.
+- Weight goals: overall = start weight → goal weight; week (Mon–Sun) / month = last weight before the
+  period → latest weight in it, against the weekly/monthly kg. Losing unless goal > start.

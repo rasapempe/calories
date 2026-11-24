@@ -4,7 +4,7 @@
  * (Saved data lives in localStorage and is never touched here.)
  */
 
-const VERSION = '2026-11-24-1';
+const VERSION = '2026-11-24-2';
 const CACHE = 'calories-' + VERSION;
 const FILES = [
   './',
@@ -18,6 +18,7 @@ const FILES = [
   'js/history.js',
   'js/body.js',
   'js/settings.js',
+  'js/goals.js',
   'icons/icon-180.png',
   'icons/icon-192.png',
   'icons/icon-512.png',

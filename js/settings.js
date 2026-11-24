@@ -4,15 +4,16 @@
 
 import {
   getSettings, setSettings, exportText, markBackedUp, lastBackup, parseBackup, replaceAll,
-  todayKey, dateKey, DEFAULT_WEIGHT, KCAL_PER_STEP_PER_KG,
+  todayKey, dateKey, latestValue, DEFAULT_WEIGHT, KCAL_PER_STEP_PER_KG,
 } from './store.js';
-import { fmt, fmtDate, toast, readNumber } from './ui.js';
+import { fmt, fmtDec, fmtDate, toast, readNumber } from './ui.js';
 
-export const APP_VERSION = '1.0';
+export const APP_VERSION = '1.1';
 
 export function renderSettings(el, ctx) {
   const s = getSettings();
   const lb = lastBackup();
+  const latest = latestValue('weight');
   const per1000 = Math.round(1000 * DEFAULT_WEIGHT * KCAL_PER_STEP_PER_KG);
 
   el.innerHTML = `
@@ -32,6 +33,18 @@ export function renderSettings(el, ctx) {
       <p class="hint">Only steps above this number add calories to your budget. Every 1,000 extra
         steps ≈ ${per1000} kcal at ${DEFAULT_WEIGHT} kg (the app uses your latest weight).
         Changes apply from today; earlier days keep their goal.</p>
+      <button type="submit" class="btn-primary wide">Save</button>
+    </form>
+
+    <h3 class="section-title">Weight goals</h3>
+    <form class="card form" data-form="weight" autocomplete="off">
+      ${weightField('Goal weight', 'goalWeight', s.goalWeight, '')}
+      ${weightField('Starting weight', 'goalStartWeight', s.goalStartWeight, latest === null ? '' : fmtDec(latest))}
+      ${weightField('Each week', 'weeklyKg', s.weeklyKg, '')}
+      ${weightField('Each month', 'monthlyKg', s.monthlyKg, '')}
+      <p class="hint">“Each week” (Monday–Sunday) and “Each month” are how much you want to lose
+        — or gain, if your goal is above your starting weight. Leave a field empty to hide its bar.
+        An empty starting weight is filled in with your latest weight.</p>
       <button type="submit" class="btn-primary wide">Save</button>
     </form>
 
@@ -66,6 +79,37 @@ export function renderSettings(el, ctx) {
     toast(`Saved: ${fmt(goal)} kcal, ${fmt(stepBase)} steps`);
   };
 
+  el.querySelector('[data-form="weight"]').onsubmit = (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const read = (name, min, max, label) => {
+      const raw = f[name].value.trim();
+      if (!raw) return { v: null };
+      const n = readNumber(raw);
+      if (n === null || n < min || n > max) { toast(`${label}: a number between ${min} and ${max}`); return null; }
+      return { v: Math.round(n * 10) / 10 };
+    };
+    const goalW = read('goalWeight', 20, 400, 'Goal weight');
+    const startW = read('goalStartWeight', 20, 400, 'Starting weight');
+    const weekly = read('weeklyKg', 0.1, 5, 'Each week');
+    const monthly = read('monthlyKg', 0.1, 20, 'Each month');
+    if (!goalW || !startW || !weekly || !monthly) return;
+
+    let start = startW.v;
+    if (goalW.v !== null && start === null) start = latest;
+    if (goalW.v !== null && start === null) { toast('Add your starting weight'); return; }
+    if (goalW.v === null) start = null;
+    const startDate = start === null ? null : (start === s.goalStartWeight && s.goalStartDate) || todayKey();
+
+    setSettings({
+      goalWeight: goalW.v, goalStartWeight: start, goalStartDate: startDate,
+      weeklyKg: weekly.v, monthlyKg: monthly.v,
+    });
+    document.activeElement?.blur();
+    ctx.refresh();
+    toast('Weight goals saved');
+  };
+
   el.querySelector('[data-act="export"]').onclick = () => exportBackup(ctx);
   const file = el.querySelector('[data-file]');
   el.querySelector('[data-act="import"]').onclick = () => file.click();
@@ -86,6 +130,15 @@ export function renderSettings(el, ctx) {
       toast(err.message || 'Could not read this file');
     }
   };
+}
+
+function weightField(label, name, value, placeholder) {
+  return `
+      <label class="field">
+        <span class="field-label">${label}</span>
+        <input type="text" inputmode="decimal" name="${name}" value="${value ?? ''}" placeholder="${placeholder}">
+        <span class="field-unit">kg</span>
+      </label>`;
 }
 
 async function exportBackup(ctx) {
