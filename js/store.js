@@ -5,8 +5,10 @@
  *   { schema, settings: {goal, stepBase, goalWeight, goalStartWeight, goalStartDate, weeklyKg, monthlyKg,
  *                        sleepGoal},
  *     days: {"YYYY-MM-DD": day}, body: [entry], lastBackup }
- *   day   = { food: [{id, kcal, t}], steps: number|null, sleep: minutes|null, goal, stepBase, sleepGoal }
- *           (goals frozen per day; sleep belongs to the day you woke up)
+ *   day   = { food: [{id, kcal, t}], steps: number|null, sleep: minutes|null, fast: boolean,
+ *             goal, stepBase, sleepGoal }
+ *           (goals frozen per day; sleep belongs to the day you woke up; fast = intermittent fasting
+ *            done that day, added in version 1.5)
  *   entry = { id, date: "YYYY-MM-DD", t, weight?, waist?, hips?, chest?, arm?, thigh? }
  *
  * RULE: never drop or rename stored fields. When the format must change, bump SCHEMA and add a
@@ -54,6 +56,7 @@ function migrate(d) {
     if (!Array.isArray(day.food)) day.food = [];
     if (day.steps === undefined) day.steps = null;
     if (day.sleep === undefined) day.sleep = null;
+    if (day.fast === undefined) day.fast = false;
   }
   // Future format changes go here, e.g. if (out.schema < 2) { ...convert...; out.schema = 2; }
   if (!out.schema || out.schema < SCHEMA) out.schema = SCHEMA;
@@ -129,7 +132,7 @@ export function setSettings(patch) {
 function ensureDay(k) {
   if (!data.days[k]) {
     data.days[k] = {
-      food: [], steps: null, sleep: null,
+      food: [], steps: null, sleep: null, fast: false,
       goal: data.settings.goal, stepBase: data.settings.stepBase, sleepGoal: data.settings.sleepGoal,
     };
   }
@@ -138,7 +141,7 @@ function ensureDay(k) {
 
 function dropIfEmpty(k) {
   const day = data.days[k];
-  if (day && day.food.length === 0 && day.steps == null && day.sleep == null) delete data.days[k];
+  if (day && day.food.length === 0 && day.steps == null && day.sleep == null && !day.fast) delete data.days[k];
 }
 
 export function foodList(k) {
@@ -191,14 +194,36 @@ export function setSleep(k, minutes) {
   save();
 }
 
-/** {min, goal, status}: status 'good' (reached the goal), 'short' or 'empty'. */
+/**
+ * Sleep color for a night, measured against the sleep goal (with the 8 h default:
+ * green 8 h or more, yellow under 8 h, orange under 7 h, red under 6 h).
+ */
+export function sleepBand(min, goal) {
+  if (min >= goal) return 'green';
+  if (min >= goal - 60) return 'yellow';
+  if (min >= goal - 120) return 'orange';
+  return 'red';
+}
+
+/** {min, goal, status, band}: status 'good' (reached the goal), 'short' or 'empty'; band = color or null. */
 export function sleepOn(k) {
   const day = data.days[k];
   const min = day?.sleep ?? null;
   const goal = day?.sleepGoal ?? data.settings.sleepGoal;
   let status = 'empty';
   if (min !== null) status = min >= goal ? 'good' : 'short';
-  return { min, goal, status };
+  return { min, goal, status, band: min === null ? null : sleepBand(min, goal) };
+}
+
+/* ---------- intermittent fasting (yes/no per day) ---------- */
+
+export function fastOn(k) { return !!data.days[k]?.fast; }
+
+export function setFast(k, on) {
+  const day = ensureDay(k);
+  day.fast = !!on;
+  dropIfEmpty(k);
+  save();
 }
 
 /** All nights with sleep entered, oldest first: [{date, min}]. */

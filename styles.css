@@ -13,6 +13,9 @@
   --green-bg: rgba(52, 199, 89, 0.18);
   --red: #ff453a;
   --red-bg: rgba(255, 69, 58, 0.2);
+  --orange: #ff9f0a;
+  --yellow: #ffd60a;
+  --purple: #bf5af2;
   --accent: #64d2ff;
   --accent-ink: #00263a;
   --radius: 18px;
@@ -49,6 +52,9 @@ button { touch-action: manipulation; cursor: pointer; }
 .green { color: var(--green); }
 .red { color: var(--red); }
 .accent { color: var(--accent); }
+.orange { color: var(--orange); }
+.yellow { color: var(--yellow); }
+.purple { color: var(--purple); }
 .unit { color: var(--text-2); font-weight: 500; font-size: 0.8em; }
 
 /* ---------- top bar ---------- */
@@ -138,8 +144,11 @@ button { touch-action: manipulation; cursor: pointer; }
 .ring-track { stroke: var(--track); }
 .ring-green { stroke: var(--green); }
 .ring-red { stroke: var(--red); }
+.ring-orange { stroke: var(--orange); }
+.ring-yellow { stroke: var(--yellow); }
+.ring-purple { stroke: var(--purple); }
 
-.add-form { display: flex; gap: 10px; padding: 10px; }
+.add-form { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; }
 .add-form input {
   flex: 1; min-width: 0;
   background: var(--surface-2);
@@ -151,7 +160,28 @@ button { touch-action: manipulation; cursor: pointer; }
   outline: none;
 }
 .add-form input::placeholder { color: var(--text-3); font-weight: 500; font-size: 18px; }
-.add-form .btn-primary { min-width: 88px; height: 52px; }
+.add-form .btn-primary, .add-form .btn-secondary { min-width: 88px; height: 52px; }
+.btn-primary.btn-green { background: var(--green); color: #00290d; }
+.btn-primary.btn-purple { background: var(--purple); color: #26003a; }
+/* fasting: looks like an input but is only a label; the button marks the day */
+.fake-input {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface-2); border-radius: 12px;
+  padding: 0 14px; height: 52px;
+  font-size: 18px; font-weight: 500; color: var(--text-3);
+}
+.fake-input.on { color: var(--purple); font-weight: 600; }
+/* line under the sleep field once a night is entered */
+.entry-status {
+  flex-basis: 100%;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 4px 0 6px; margin-top: -2px;
+  font-size: 15px; color: var(--text-2);
+}
+.entry-status > span:first-child { display: grid; place-items: center; }
+.entry-text { flex: 1; }
+.entry-text b { font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .list { padding: 4px 16px; }
 .row {
@@ -192,21 +222,6 @@ button { touch-action: manipulation; cursor: pointer; }
   border: 0; color: var(--accent); font-size: 16px; font-weight: 600; text-align: left;
 }
 .goals-empty:active { opacity: 0.7; }
-
-/* sleep row (Today) */
-.sleep-row {
-  display: flex; align-items: center; gap: 12px; width: 100%;
-  border: 0; text-align: left; padding: 14px 16px;
-}
-.sleep-row:active { opacity: 0.7; }
-.sleep-icon { color: #bf9bff; display: grid; place-items: center; }
-.sleep-main { flex: 1; display: flex; flex-direction: column; }
-.sleep-label { font-size: 17px; font-weight: 700; }
-.sleep-sub { font-size: 13px; color: var(--text-2); }
-.sleep-val { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.sleep-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.sleep-inputs label { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.sleep-inputs span { font-size: 13px; color: var(--text-2); }
 
 /* ---------- History calendar ---------- */
 
@@ -282,8 +297,10 @@ button { touch-action: manipulation; cursor: pointer; }
   fill: var(--green); font-size: 11px; font-weight: 700;
   stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; paint-order: stroke;
 }
-.chart .bar-good { fill: var(--green); }
-.chart .bar-short { fill: var(--red); opacity: 0.85; }
+.chart .bar-green { fill: var(--green); }
+.chart .bar-yellow { fill: var(--yellow); }
+.chart .bar-orange { fill: var(--orange); }
+.chart .bar-red { fill: var(--red); }
 .chart-empty { color: var(--text-3); text-align: center; padding: 26px 0 18px; font-size: 14px; }
 
 /* ---------- forms and buttons ---------- */

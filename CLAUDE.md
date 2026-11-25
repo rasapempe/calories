@@ -30,7 +30,11 @@ Installed on the phone from Chrome via Share → Add to Home Screen; always open
 - Step calories = max(0, steps − base) × weight kg × 0.0005, weight = latest entry on or before
   that day (70 kg until one exists).
 - Day color: green if eaten ≤ budget, red if over, grey if no food entered.
-- Sleep: minutes stored on the day you woke up (`day.sleep`); green if ≥ that day's sleep goal, red if
-  less. History calendar: outer ring calories, inner ring sleep; Body has nightly sleep bars.
+- Sleep: minutes stored on the day you woke up (`day.sleep`), typed in one field ("7.30" = 7 h 30 min,
+  "7.5" = 7½ h); adding again replaces it. Colors against that day's sleep goal: green ≥ goal, yellow
+  < goal, orange < goal − 1 h, red < goal − 2 h (with the 8 h default: 8 / 7 / 6 h), in History, Today
+  and the Body sleep bars.
+- Intermittent fasting: yes/no per day (`day.fast`), no hours.
+- History calendar: outer ring calories, middle ring sleep, small inner purple ring on fasting days.
 - Weight goals: overall = start weight → goal weight; week (Mon–Sun) / month = last weight before the
   period → latest weight in it, against the weekly/monthly kg. Losing unless goal > start.

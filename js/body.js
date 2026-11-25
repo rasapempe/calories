@@ -99,7 +99,7 @@ function sleepCard(range, today) {
     </section>`;
 }
 
-/** One bar per night from 0 h; green when that night reached its goal, red when short. */
+/** One bar per night from 0 h, colored like History: green / yellow / orange / red against that night's goal. */
 function sleepBarsSVG(pts, from, to, isAll, goalH) {
   const W = 340;
   const H = 150;
@@ -131,10 +131,9 @@ function sleepBarsSVG(pts, from, to, isAll, goalH) {
     <text x="${W - R}" y="${H - 6}" class="axis" text-anchor="end">${fmtShort(to, withYear)}</text>`;
 
   const bars = pts.map((p) => {
-    const good = sleepOn(p.date).status === 'good';
     const yTop = y(p.v);
     return `<rect x="${(x(p.date) - barW / 2).toFixed(1)}" y="${yTop.toFixed(1)}" width="${barW.toFixed(1)}"
-      height="${(y(0) - yTop).toFixed(1)}" rx="${Math.min(2, barW / 2).toFixed(1)}" class="${good ? 'bar-good' : 'bar-short'}"/>`;
+      height="${(y(0) - yTop).toFixed(1)}" rx="${Math.min(2, barW / 2).toFixed(1)}" class="bar-${sleepOn(p.date).band}"/>`;
   }).join('');
 
   const gy = y(goalH);

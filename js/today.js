@@ -1,13 +1,14 @@
 /*
- * today.js — the Today screen for one day: budget ring, add calories, steps, list of entries.
- * Also used for earlier days (opened from History or with the arrows).
+ * today.js — the Today screen for one day: budget ring, add calories, add sleep, intermittent
+ * fasting (yes/no), steps, list of entries. Also used for earlier days (opened from History or
+ * with the arrows).
  */
 
 import {
   daySummary, foodList, addFood, removeFood, undoRemoveFood, setSteps, todayKey, addDays,
-  weightOn, stepCalories, DEFAULT_WEIGHT, sleepOn, setSleep,
+  weightOn, stepCalories, DEFAULT_WEIGHT, sleepOn, setSleep, fastOn, setFast,
 } from './store.js';
-import { fmt, fmtDay, fmtTime, ringSVG, openSheet, toast, readNumber, fmtDec, fmtSleep } from './ui.js';
+import { fmt, fmtDay, fmtTime, ringSVG, openSheet, toast, readNumber, readSleep, fmtDec, fmtSleep } from './ui.js';
 import { goalProgress, shortGoalsCard } from './goals.js';
 
 function title(k) {
@@ -24,6 +25,7 @@ export function renderToday(el, ctx) {
   const food = foodList(k).reverse();
   const over = s.left < 0;
   const sl = sleepOn(k);
+  const fasted = fastOn(k);
 
   const budgetNote = s.burned > 0
     ? `<span class="muted">goal ${fmt(s.goal)} + steps ${fmt(s.burned)}</span>`
@@ -71,16 +73,24 @@ export function renderToday(el, ctx) {
       <button type="submit" class="btn-primary">Add</button>
     </form>
 
-    ${isToday ? shortGoalsCard(goalProgress()) : ''}
+    <form class="card add-form sleep-form" autocomplete="off">
+      <input id="sleep-in" type="text" inputmode="decimal" placeholder="Add sleep, e.g. 7.30" aria-label="Sleep">
+      <button type="submit" class="btn-primary btn-green">Add</button>
+      ${sl.min === null ? '' : `
+        <div class="entry-status">
+          <span class="${sl.band}">${moonIcon()}</span>
+          <span class="entry-text">${isToday ? 'Last night' : 'The night before'}
+            <b class="${sl.band}">${fmtSleep(sl.min)}</b> · goal ${fmtSleep(sl.goal)}</span>
+          <button type="button" class="row-del" data-act="sleep-del" aria-label="Remove sleep">${xIcon()}</button>
+        </div>`}
+    </form>
 
-    <button class="card sleep-row" data-act="sleep">
-      <span class="sleep-icon">${moonIcon()}</span>
-      <span class="sleep-main">
-        <span class="sleep-label">Sleep</span>
-        <span class="sleep-sub">${isToday ? 'last night' : 'the night before'} · goal ${fmtSleep(sl.goal)}</span>
-      </span>
-      <span class="sleep-val ${sl.status === 'good' ? 'green' : sl.status === 'short' ? 'red' : 'accent'}">${sl.min === null ? 'tap to add' : fmtSleep(sl.min)}</span>
-    </button>
+    <div class="card add-form fast-form">
+      <div class="fake-input ${fasted ? 'on' : ''}">${fasted ? `${checkIcon()} Intermittent fasting` : 'Intermittent fasting'}</div>
+      <button type="button" class="${fasted ? 'btn-secondary' : 'btn-primary btn-purple'}" data-act="fast">${fasted ? 'Remove' : 'Add'}</button>
+    </div>
+
+    ${isToday ? shortGoalsCard(goalProgress()) : ''}
 
     <section class="card list">
       ${food.length ? food.map((f) => `
@@ -97,7 +107,6 @@ export function renderToday(el, ctx) {
   const back = el.querySelector('[data-act="today"]');
   if (back) back.onclick = () => ctx.setDate(todayKey());
   el.querySelector('[data-act="steps"]').onclick = () => stepsSheet(k, s, ctx);
-  el.querySelector('[data-act="sleep"]').onclick = () => sleepSheet(k, sl, ctx);
   const setGoals = el.querySelector('[data-act="set-goals"]');
   if (setGoals) setGoals.onclick = () => ctx.goTab('settings');
 
@@ -118,6 +127,44 @@ export function renderToday(el, ctx) {
     toast(`Added ${fmt(n)} kcal`);
     const fresh = document.getElementById('kcal');
     if (fresh) fresh.focus();
+  };
+
+  // Sleep: one number per night; adding again replaces it (Undo brings the old one back).
+  const sleepForm = el.querySelector('.sleep-form');
+  const sleepIn = el.querySelector('#sleep-in');
+  sleepForm.onsubmit = (e) => {
+    e.preventDefault();
+    const min = readSleep(sleepIn.value);
+    if (min === null || min < 1 || min > 1440) {
+      sleepIn.classList.add('shake');
+      setTimeout(() => sleepIn.classList.remove('shake'), 400);
+      toast('Type sleep like 7.30 (7 h 30 min)');
+      return;
+    }
+    const day = ctx.currentDay();
+    const before = sleepOn(day).min;
+    setSleep(day, min);
+    if (document.activeElement) document.activeElement.blur();
+    ctx.refresh();
+    const undo = () => { setSleep(day, before); ctx.refresh(); };
+    if (before === null) toast(`Sleep saved: ${fmtSleep(min)}`, 'Undo', undo);
+    else toast(`Sleep changed to ${fmtSleep(min)}`, 'Undo', undo);
+  };
+  const sleepDel = el.querySelector('[data-act="sleep-del"]');
+  if (sleepDel) {
+    sleepDel.onclick = () => {
+      const before = sl.min;
+      setSleep(k, null);
+      ctx.refresh();
+      toast('Sleep removed', 'Undo', () => { setSleep(k, before); ctx.refresh(); });
+    };
+  }
+
+  el.querySelector('[data-act="fast"]').onclick = () => {
+    const day = fasted ? k : ctx.currentDay();
+    setFast(day, !fasted);
+    ctx.refresh();
+    toast(fasted ? 'Fasting removed' : 'Fasting marked', 'Undo', () => { setFast(day, fasted); ctx.refresh(); });
   };
 
   el.querySelectorAll('[data-del]').forEach((b) => {
@@ -174,64 +221,12 @@ function stepsSheet(k, s, ctx) {
   });
 }
 
-function sleepSheet(k, sl, ctx) {
-  const h = sl.min === null ? '' : Math.floor(sl.min / 60);
-  const m = sl.min === null ? '' : sl.min % 60;
-  openSheet(`
-    <h2>Sleep</h2>
-    <p class="muted">The night before ${fmtDay(k)}</p>
-    <div class="sleep-inputs">
-      <label><input id="sl-h" class="big-input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${h}" autocomplete="off"><span>hours</span></label>
-      <label><input id="sl-m" class="big-input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${m}" autocomplete="off"><span>minutes</span></label>
-    </div>
-    <p class="hint" id="sl-hint"></p>
-    <div class="sheet-actions">
-      <button type="button" class="btn-secondary" data-close>Cancel</button>
-      <button type="button" class="btn-primary" data-save>Save</button>
-    </div>
-    ${sl.min !== null ? '<button type="button" class="btn-text danger" data-clear>Remove sleep</button>' : ''}
-  `, (sheet, close) => {
-    const hIn = sheet.querySelector('#sl-h');
-    const mIn = sheet.querySelector('#sl-m');
-    const hint = sheet.querySelector('#sl-hint');
-    const read = () => {
-      const hh = readNumber(hIn.value) ?? 0;
-      const mm = readNumber(mIn.value) ?? 0;
-      const ok = Number.isInteger(hh) && Number.isInteger(mm) && hh >= 0 && hh <= 24 && mm >= 0 && mm <= 59;
-      return ok ? hh * 60 + mm : null;
-    };
-    const update = () => {
-      const total = read();
-      let text = `Your goal: <b>${fmtSleep(sl.goal)}</b>.`;
-      if (total) {
-        text += total >= sl.goal ? ' <span class="green">Goal reached.</span>'
-          : ` <span class="red">${fmtSleep(sl.goal - total)} short.</span>`;
-      }
-      hint.innerHTML = text;
-    };
-    update();
-    hIn.addEventListener('input', update);
-    mIn.addEventListener('input', update);
-    setTimeout(() => hIn.focus(), 50);
-    const saveIt = () => {
-      if (!hIn.value.trim() && !mIn.value.trim()) { setSleep(k, null); close(); ctx.refresh(); return; }
-      const total = read();
-      if (total === null || total < 1 || total > 1440) { toast('Hours 0–24 and minutes 0–59'); return; }
-      setSleep(k, total);
-      close();
-      ctx.refresh();
-      toast(`Sleep saved: ${fmtSleep(total)}`);
-    };
-    sheet.querySelector('[data-save]').onclick = saveIt;
-    mIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveIt(); });
-    hIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') mIn.focus(); });
-    const clear = sheet.querySelector('[data-clear]');
-    if (clear) clear.onclick = () => { setSleep(k, null); close(); ctx.refresh(); toast('Sleep removed'); };
-  });
+function moonIcon() {
+  return '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor"/></svg>';
 }
 
-function moonIcon() {
-  return '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor"/></svg>';
+function checkIcon() {
+  return '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
 
 export function chevron(dir) {

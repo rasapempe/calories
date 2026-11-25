@@ -1,11 +1,12 @@
 /*
- * history.js — month calendar showing calories and sleep together.
+ * history.js — month calendar showing calories, sleep and fasting together.
  * Each day: outer ring = calories (green within budget, red tip over, grey empty),
- * inner ring = sleep (filled by sleep ÷ goal; green reached, red short, grey not entered).
+ * middle ring = sleep (filled by sleep ÷ goal; green / yellow / orange / red, grey not entered),
+ * small inner ring = intermittent fasting (purple when done, nothing when not).
  * Week column: calories under/over + average sleep. Tapping a day opens it on the Today screen.
  */
 
-import { daySummary, sleepOn, dateKey, todayKey } from './store.js';
+import { daySummary, sleepOn, sleepBand, fastOn, dateKey, todayKey } from './store.js';
 import { fmt, dayRingsSVG, fmtSleepShort, MONTHS } from './ui.js';
 import { chevron } from './today.js';
 
@@ -37,7 +38,7 @@ export function renderHistory(el, ctx) {
       if (!future) {
         const s = daySummary(k);
         const sl = sleepOn(k);
-        ring = dayRingsSVG(s, sl, 38);
+        ring = dayRingsSVG(s, sl, fastOn(k), 38);
         if (s.hasFood) {
           wk.left += s.left; wk.calN++;
           if (inMonth) { if (s.status === 'under') cal.good++; else cal.bad++; cal.sum += s.eaten; cal.n++; }
@@ -70,7 +71,7 @@ export function renderHistory(el, ctx) {
         <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span><span>Week</span>
       </div>
       ${rows}
-      <div class="cal-legend">Outer ring: calories · Inner ring: sleep</div>
+      <div class="cal-legend">Outer ring: calories · Middle: sleep · Inner: <span class="purple">fasting</span></div>
     </section>
     <section class="card month-sum">
       <div class="sum-title">Calories</div>
@@ -103,8 +104,7 @@ function weekCell(wk) {
   }
   if (wk.sleepN) {
     const avg = wk.sleep / wk.sleepN;
-    const ok = avg >= wk.goal / wk.sleepN;
-    html += `<span class="wk-sleep ${ok ? 'green' : 'red'}">${MOON}${fmtSleepShort(avg)}</span>`;
+    html += `<span class="wk-sleep ${sleepBand(avg, wk.goal / wk.sleepN)}">${MOON}${fmtSleepShort(avg)}</span>`;
   }
   return `<div class="cal-week">${html}</div>`;
 }

@@ -8,7 +8,7 @@ import {
 } from './store.js';
 import { fmt, fmtDec, fmtDate, toast, readNumber, fmtSleep } from './ui.js';
 
-export const APP_VERSION = '1.4';
+export const APP_VERSION = '1.5';
 
 export function renderSettings(el, ctx) {
   const s = getSettings();
@@ -60,7 +60,9 @@ export function renderSettings(el, ctx) {
         <input type="text" inputmode="numeric" pattern="[0-9]*" name="sleepM" value="${s.sleepGoal % 60}">
         <span class="field-unit">min</span>
       </label>
-      <p class="hint">A night shows green when you sleep at least this long, red when less.
+      <p class="hint">Sleep colors: <span class="green">green</span> = this long or more,
+        <span class="yellow">yellow</span> = up to 1 h less, <span class="orange">orange</span> = 1–2 h less,
+        <span class="red">red</span> = over 2 h less.
         Changes apply from today; earlier nights keep their goal.</p>
       <button type="submit" class="btn-primary wide">Save</button>
     </form>
