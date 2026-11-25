@@ -18,12 +18,18 @@ const state = {
   followToday: true, // the Today screen moves on to the new day after midnight
   historyMonth: { year: now.getFullYear(), month: now.getMonth() },
   bodyRange: '3m',
+  historyMode: 'calories', // or 'sleep'
 };
 
 const ctx = {
   get date() { return state.date; },
   get historyMonth() { return state.historyMonth; },
   get bodyRange() { return state.bodyRange; },
+  get historyMode() { return state.historyMode; },
+  setHistoryMode(mode) {
+    state.historyMode = mode;
+    render();
+  },
   refresh: render,
   goTab: (tab) => showTab(tab),
   currentDay() {
@@ -38,7 +44,7 @@ const ctx = {
   openDay(k) {
     state.date = k;
     state.followToday = k === todayKey();
-    showTab('today');
+    showTab('today', true);
   },
   setHistoryMonth(year, month) {
     const d = new Date(year, month, 1);
@@ -60,10 +66,11 @@ function render() {
   window.scrollTo(0, y);
 }
 
-function showTab(tab) {
+/** keepDate = true only when History opens a specific day; the Today tab otherwise shows today. */
+function showTab(tab, keepDate = false) {
   closeSheet();
-  if (tab === 'today' && state.tab === 'today' && !state.followToday) {
-    state.date = todayKey(); // tapping Today again jumps back to today
+  if (tab === 'today' && !keepDate) {
+    state.date = todayKey();
     state.followToday = true;
   }
   if (tab === 'history' && state.tab !== 'history' && state.tab === 'today') {
@@ -80,8 +87,15 @@ document.querySelectorAll('.tabbar button').forEach((b) => {
   b.addEventListener('click', () => showTab(b.dataset.tab));
 });
 
+// Coming back to the app after 10+ minutes: show today again, not an old day left open.
+let hiddenAt = 0;
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') render();
+  if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+  if (hiddenAt && Date.now() - hiddenAt > 10 * 60 * 1000) {
+    state.date = todayKey();
+    state.followToday = true;
+  }
+  render();
 });
 
 setSaveErrorHandler(() => toast('Could not save — phone storage is full'));

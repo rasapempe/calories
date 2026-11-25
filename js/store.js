@@ -2,9 +2,11 @@
  * store.js — all app data: load/save on the phone, calculations, backup.
  *
  * Data lives in localStorage under one key, as one JSON object:
- *   { schema, settings: {goal, stepBase, goalWeight, goalStartWeight, goalStartDate, weeklyKg, monthlyKg},
+ *   { schema, settings: {goal, stepBase, goalWeight, goalStartWeight, goalStartDate, weeklyKg, monthlyKg,
+ *                        sleepGoal},
  *     days: {"YYYY-MM-DD": day}, body: [entry], lastBackup }
- *   day   = { food: [{id, kcal, t}], steps: number|null, goal, stepBase }  (goal/base frozen per day)
+ *   day   = { food: [{id, kcal, t}], steps: number|null, sleep: minutes|null, goal, stepBase, sleepGoal }
+ *           (goals frozen per day; sleep belongs to the day you woke up)
  *   entry = { id, date: "YYYY-MM-DD", t, weight?, waist?, hips?, chest?, arm?, thigh? }
  *
  * RULE: never drop or rename stored fields. When the format must change, bump SCHEMA and add a
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS = {
   goalStartDate: null,    // "YYYY-MM-DD"
   weeklyKg: null,         // kg to lose (or gain) per Mon–Sun week
   monthlyKg: null,        // kg per calendar month
+  sleepGoal: 480,         // minutes of sleep a night; added in version 1.3
 };
 export const DEFAULT_WEIGHT = 70;          // kg, used for step calories until a weight is entered
 export const KCAL_PER_STEP_PER_KG = 0.0005; // ≈ 35 kcal per 1,000 steps at 70 kg
@@ -50,6 +53,7 @@ function migrate(d) {
     const day = out.days[k];
     if (!Array.isArray(day.food)) day.food = [];
     if (day.steps === undefined) day.steps = null;
+    if (day.sleep === undefined) day.sleep = null;
   }
   // Future format changes go here, e.g. if (out.schema < 2) { ...convert...; out.schema = 2; }
   if (!out.schema || out.schema < SCHEMA) out.schema = SCHEMA;
@@ -112,7 +116,11 @@ export function setSettings(patch) {
   data.settings = { ...data.settings, ...patch };
   // Today follows the new settings; earlier days keep the goal they had.
   const today = data.days[todayKey()];
-  if (today) { today.goal = data.settings.goal; today.stepBase = data.settings.stepBase; }
+  if (today) {
+    today.goal = data.settings.goal;
+    today.stepBase = data.settings.stepBase;
+    today.sleepGoal = data.settings.sleepGoal;
+  }
   save();
 }
 
@@ -120,14 +128,17 @@ export function setSettings(patch) {
 
 function ensureDay(k) {
   if (!data.days[k]) {
-    data.days[k] = { food: [], steps: null, goal: data.settings.goal, stepBase: data.settings.stepBase };
+    data.days[k] = {
+      food: [], steps: null, sleep: null,
+      goal: data.settings.goal, stepBase: data.settings.stepBase, sleepGoal: data.settings.sleepGoal,
+    };
   }
   return data.days[k];
 }
 
 function dropIfEmpty(k) {
   const day = data.days[k];
-  if (day && day.food.length === 0 && (day.steps === null || day.steps === undefined)) delete data.days[k];
+  if (day && day.food.length === 0 && day.steps == null && day.sleep == null) delete data.days[k];
 }
 
 export function foodList(k) {
@@ -167,6 +178,35 @@ export function setSteps(k, steps) {
   day.steps = steps;
   dropIfEmpty(k);
   save();
+}
+
+/* ---------- sleep ---------- */
+
+/** Sleep in minutes for the night before day k (null = remove). */
+export function setSleep(k, minutes) {
+  const day = ensureDay(k);
+  day.sleep = minutes;
+  if (day.sleepGoal == null) day.sleepGoal = data.settings.sleepGoal;
+  dropIfEmpty(k);
+  save();
+}
+
+/** {min, goal, status}: status 'good' (reached the goal), 'short' or 'empty'. */
+export function sleepOn(k) {
+  const day = data.days[k];
+  const min = day?.sleep ?? null;
+  const goal = day?.sleepGoal ?? data.settings.sleepGoal;
+  let status = 'empty';
+  if (min !== null) status = min >= goal ? 'good' : 'short';
+  return { min, goal, status };
+}
+
+/** All nights with sleep entered, oldest first: [{date, min}]. */
+export function sleepEntries() {
+  return Object.keys(data.days)
+    .filter((k) => data.days[k].sleep != null)
+    .sort()
+    .map((k) => ({ date: k, min: data.days[k].sleep }));
 }
 
 /** Latest weight on or before day k; if none, the first weight ever entered; else null. */

@@ -1,14 +1,14 @@
 /*
- * settings.js — daily calorie goal, step base number, and backup export/import.
+ * settings.js — daily calorie goal, step base number, weight goals, sleep goal, backup export/import.
  */
 
 import {
   getSettings, setSettings, exportText, markBackedUp, lastBackup, parseBackup, replaceAll,
   todayKey, dateKey, latestValue, DEFAULT_WEIGHT, KCAL_PER_STEP_PER_KG,
 } from './store.js';
-import { fmt, fmtDec, fmtDate, toast, readNumber } from './ui.js';
+import { fmt, fmtDec, fmtDate, toast, readNumber, fmtSleep } from './ui.js';
 
-export const APP_VERSION = '1.2';
+export const APP_VERSION = '1.3';
 
 export function renderSettings(el, ctx) {
   const s = getSettings();
@@ -45,6 +45,23 @@ export function renderSettings(el, ctx) {
       <p class="hint">“Each week” (Monday–Sunday) and “Each month” are how much you want to lose
         — or gain, if your goal is above your starting weight. Leave a field empty to hide its bar.
         An empty starting weight is filled in with your latest weight.</p>
+      <button type="submit" class="btn-primary wide">Save</button>
+    </form>
+
+    <h3 class="section-title">Sleep goal</h3>
+    <form class="card form" data-form="sleep" autocomplete="off">
+      <label class="field">
+        <span class="field-label">Hours</span>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" name="sleepH" value="${Math.floor(s.sleepGoal / 60)}">
+        <span class="field-unit">h</span>
+      </label>
+      <label class="field">
+        <span class="field-label">Minutes</span>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" name="sleepM" value="${s.sleepGoal % 60}">
+        <span class="field-unit">min</span>
+      </label>
+      <p class="hint">A night shows green when you sleep at least this long, red when less.
+        Changes apply from today; earlier nights keep their goal.</p>
       <button type="submit" class="btn-primary wide">Save</button>
     </form>
 
@@ -108,6 +125,19 @@ export function renderSettings(el, ctx) {
     document.activeElement?.blur();
     ctx.refresh();
     toast('Weight goals saved');
+  };
+
+  el.querySelector('[data-form="sleep"]').onsubmit = (e) => {
+    e.preventDefault();
+    const h = readNumber(e.target.sleepH.value) ?? 0;
+    const m = readNumber(e.target.sleepM.value) ?? 0;
+    if (!Number.isInteger(h) || !Number.isInteger(m) || h < 1 || h > 14 || m < 0 || m > 59) {
+      toast('Hours 1–14 and minutes 0–59'); return;
+    }
+    setSettings({ sleepGoal: h * 60 + m });
+    document.activeElement?.blur();
+    ctx.refresh();
+    toast(`Sleep goal saved: ${fmtSleep(h * 60 + m)}`);
   };
 
   el.querySelector('[data-act="export"]').onclick = () => exportBackup(ctx);

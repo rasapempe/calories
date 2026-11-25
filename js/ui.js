@@ -46,6 +46,21 @@ export function readNumber(str) {
   return Number.isFinite(n) ? n : null;
 }
 
+/** 450 → "7 h 30 min", 480 → "8 h", 45 → "45 min" */
+export function fmtSleep(min) {
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  if (!h) return `${m} min`;
+  return m ? `${h} h ${m} min` : `${h} h`;
+}
+
+/** 450 → "7:30" */
+export function fmtSleepShort(min) {
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
 /* ---------- calorie ring ---------- */
 
 const ARC = 280;      // degrees of the ring; the gap sits at the bottom
@@ -84,6 +99,20 @@ export function ringSVG(s, size, stroke) {
     }
   }
   return `<svg class="ring" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">${track}${fill}</svg>`;
+}
+
+/** Sleep ring for the History calendar: filled by sleep ÷ goal; green when reached, red when short. */
+export function sleepRingSVG(sl, size, stroke) {
+  const c = size / 2;
+  const r = (size - stroke) / 2;
+  let html = `<path d="${arcPath(c, r, START, ARC)}" class="ring-track" stroke-width="${stroke}"/>`;
+  if (sl.min !== null) {
+    const sweep = ARC * Math.min(sl.min / Math.max(sl.goal, 1), 1);
+    const cls = sl.status === 'good' ? 'ring-green' : 'ring-red';
+    if (sweep > 0.5) html += `<path d="${arcPath(c, r, START, sweep)}" class="${cls}" stroke-width="${stroke}"/>`;
+    html += `<text x="${c}" y="${c + 3.5}" text-anchor="middle" class="ring-txt">${fmtSleepShort(sl.min)}</text>`;
+  }
+  return `<svg class="ring" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">${html}</svg>`;
 }
 
 /* ---------- bottom sheet ---------- */

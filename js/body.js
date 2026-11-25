@@ -1,13 +1,13 @@
 /*
- * body.js — the Body screen: weight and measurements, one graph each (1M / 3M / 1Y / All),
+ * body.js — the Body screen: weight, measurements and sleep, one graph each (1M / 3M / 1Y / All),
  * the list of entries, and the add/edit sheet.
  */
 
 import {
   MEASURES, bodyEntries, saveBodyEntry, deleteBodyEntry, latestValue, todayKey, addDays, parseKey, dateKey,
-  getSettings,
+  getSettings, sleepEntries, sleepOn,
 } from './store.js';
-import { fmtDec, fmtDate, fmtShort, openSheet, toast, readNumber } from './ui.js';
+import { fmtDec, fmtDate, fmtShort, openSheet, toast, readNumber, fmtSleep, fmtSleepShort } from './ui.js';
 import { goalProgress, overallGoalCard } from './goals.js';
 
 const RANGES = [
@@ -24,7 +24,7 @@ export function renderBody(el, ctx) {
   const from = range.days ? addDays(today, -range.days) : (entries[0]?.date || today);
   const { goalWeight } = getSettings();
 
-  const charts = MEASURES.map((m) => {
+  let charts = MEASURES.map((m) => {
     const pts = entries
       .filter((e) => typeof e[m.key] === 'number' && e.date >= from && e.date <= today)
       .map((e) => ({ date: e.date, v: e[m.key] }));
@@ -47,6 +47,8 @@ export function renderBody(el, ctx) {
         ${pts.length ? chartSVG(pts, from, today, range.days === null, m.key === 'weight' ? goalWeight : null) : `<div class="chart-empty">${latest === null ? 'No entries yet' : 'No entries in this period'}</div>`}
       </section>`;
   }).join('');
+
+  charts += sleepCard(range, today);
 
   const list = [...entries].reverse();
   el.innerHTML = `
@@ -74,6 +76,72 @@ export function renderBody(el, ctx) {
   el.querySelectorAll('[data-edit]').forEach((b) => {
     b.onclick = () => editSheet(entries.find((e) => e.id === b.dataset.edit), ctx);
   });
+}
+
+function sleepCard(range, today) {
+  const all = sleepEntries();
+  const from = range.days ? addDays(today, -range.days) : (all[0]?.date || today);
+  const pts = all.filter((e) => e.date >= from && e.date <= today).map((e) => ({ date: e.date, v: e.min / 60 }));
+  const goalMin = getSettings().sleepGoal;
+  const avg = pts.length ? (pts.reduce((a, p) => a + p.v, 0) / pts.length) * 60 : null;
+  const info = pts.length
+    ? `${pts.length === 1 ? '1 night' : `${pts.length} nights`} in this period · goal ${fmtSleep(goalMin)}`
+    : '';
+  return `
+    <section class="card chart-card">
+      <div class="chart-head">
+        <div class="chart-title">Sleep</div>
+        <div class="chart-latest">${avg === null ? '' : `${fmtSleepShort(avg)} <span class="unit">avg</span>`}</div>
+      </div>
+      <div class="chart-change">${info}</div>
+      ${pts.length ? sleepBarsSVG(pts, from, today, range.days === null, goalMin / 60)
+        : `<div class="chart-empty">${all.length ? 'No sleep entered in this period' : 'Add sleep on the Today screen'}</div>`}
+    </section>`;
+}
+
+/** One bar per night from 0 h; green when that night reached its goal, red when short. */
+function sleepBarsSVG(pts, from, to, isAll, goalH) {
+  const W = 340;
+  const H = 150;
+  const L = 40;
+  const R = 12;
+  const T = 12;
+  const B = 24;
+  const t0 = parseKey(from).getTime();
+  let t1 = parseKey(to).getTime();
+  if (t1 <= t0) t1 = t0 + 86400000;
+  const days = (t1 - t0) / 86400000 + 1;
+  const dayW = (W - L - R) / days;
+  const barW = Math.max(1.5, Math.min(14, dayW * 0.7));
+
+  const maxV = Math.max(goalH, ...pts.map((p) => p.v));
+  const top = Math.ceil((maxV + 0.5) / 2) * 2; // even number of hours
+  const y = (v) => T + (1 - v / top) * (H - T - B);
+  const x = (k) => L + ((parseKey(k).getTime() - t0) / 86400000 + 0.5) * dayW;
+
+  const grid = [top, top / 2, 0].map((v) => `
+    <line x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="grid"/>
+    <text x="${L - 6}" y="${(y(v) + 4).toFixed(1)}" class="axis" text-anchor="end">${v ? `${v} h` : '0'}</text>`).join('');
+
+  const withYear = isAll ? days > 300 : days > 200;
+  const midK = dateKey(new Date((t0 + t1) / 2));
+  const xLabels = `
+    <text x="${L}" y="${H - 6}" class="axis" text-anchor="start">${fmtShort(from, withYear)}</text>
+    <text x="${(L + W - R) / 2}" y="${H - 6}" class="axis" text-anchor="middle">${fmtShort(midK, withYear)}</text>
+    <text x="${W - R}" y="${H - 6}" class="axis" text-anchor="end">${fmtShort(to, withYear)}</text>`;
+
+  const bars = pts.map((p) => {
+    const good = sleepOn(p.date).status === 'good';
+    const yTop = y(p.v);
+    return `<rect x="${(x(p.date) - barW / 2).toFixed(1)}" y="${yTop.toFixed(1)}" width="${barW.toFixed(1)}"
+      height="${(y(0) - yTop).toFixed(1)}" rx="${Math.min(2, barW / 2).toFixed(1)}" class="${good ? 'bar-good' : 'bar-short'}"/>`;
+  }).join('');
+
+  const gy = y(goalH);
+  // The goal is written in the card's header line, so the dotted line needs no label here.
+  const goalLine = `<line x1="${L}" x2="${W - R}" y1="${gy.toFixed(1)}" y2="${gy.toFixed(1)}" class="goal-line"/>`;
+
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" aria-hidden="true">${grid}${xLabels}${bars}${goalLine}</svg>`;
 }
 
 function summaryLine(e) {
@@ -148,7 +216,7 @@ function editSheet(entry, ctx) {
 
 /* ---------- line chart (plain SVG, works offline) ---------- */
 
-function chartSVG(pts, from, to, isAll, goal = null) {
+function chartSVG(pts, from, to, isAll, goal = null, fmtY = fmtDec) {
   const W = 340;
   const H = 150;
   const L = 40;
@@ -172,7 +240,7 @@ function chartSVG(pts, from, to, isAll, goal = null) {
 
   const grid = [hi, (hi + lo) / 2, lo].map((v) => `
     <line x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="grid"/>
-    <text x="${L - 6}" y="${(y(v) + 4).toFixed(1)}" class="axis" text-anchor="end">${fmtDec(v)}</text>`).join('');
+    <text x="${L - 6}" y="${(y(v) + 4).toFixed(1)}" class="axis" text-anchor="end">${fmtY(v)}</text>`).join('');
 
   const spanDays = (t1 - t0) / 86400000;
   const withYear = isAll ? spanDays > 300 : spanDays > 200;
@@ -187,7 +255,7 @@ function chartSVG(pts, from, to, isAll, goal = null) {
     const gy = y(goal);
     const ty = gy < T + 14 ? gy + 14 : gy - 6;
     goalLine = `<line x1="${L}" x2="${W - R}" y1="${gy.toFixed(1)}" y2="${gy.toFixed(1)}" class="goal-line"/>
-      <text x="${W - R}" y="${ty.toFixed(1)}" class="goal-tag" text-anchor="end">goal ${fmtDec(goal)}</text>`;
+      <text x="${W - R}" y="${ty.toFixed(1)}" class="goal-tag" text-anchor="end">goal ${fmtY(goal)}</text>`;
   }
 
   const coords = pts.map((p) => [x(p.date), y(p.v)]);

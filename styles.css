@@ -138,6 +138,7 @@ button { touch-action: manipulation; cursor: pointer; }
 .ring-track { stroke: var(--track); }
 .ring-green { stroke: var(--green); }
 .ring-red { stroke: var(--red); }
+.ring-txt { fill: var(--text); font-size: 9px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .add-form { display: flex; gap: 10px; padding: 10px; }
 .add-form input {
@@ -193,6 +194,21 @@ button { touch-action: manipulation; cursor: pointer; }
 }
 .goals-empty:active { opacity: 0.7; }
 
+/* sleep row (Today) */
+.sleep-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  border: 0; text-align: left; padding: 14px 16px;
+}
+.sleep-row:active { opacity: 0.7; }
+.sleep-icon { color: #bf9bff; display: grid; place-items: center; }
+.sleep-main { flex: 1; display: flex; flex-direction: column; }
+.sleep-label { font-size: 17px; font-weight: 700; }
+.sleep-sub { font-size: 13px; color: var(--text-2); }
+.sleep-val { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sleep-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sleep-inputs label { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sleep-inputs span { font-size: 13px; color: var(--text-2); }
+
 /* ---------- History calendar ---------- */
 
 .cal { padding: 12px 8px 6px; }
@@ -241,6 +257,7 @@ button { touch-action: manipulation; cursor: pointer; }
   height: 36px; font-size: 15px; font-weight: 600; color: var(--text-2);
 }
 .seg button.on { background: var(--surface-2); color: var(--text); }
+.seg.seg-2 { grid-template-columns: 1fr 1fr; margin-bottom: 10px; }
 
 .chart-card { padding-bottom: 10px; }
 .chart-head { display: flex; justify-content: space-between; align-items: baseline; }
@@ -255,7 +272,12 @@ button { touch-action: manipulation; cursor: pointer; }
 .chart .dot { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
 .chart .dot.last { fill: var(--accent); }
 .chart .goal-line { stroke: var(--green); stroke-width: 1.5; stroke-dasharray: 4 4; }
-.chart .goal-tag { fill: var(--green); font-size: 11px; font-weight: 700; }
+.chart .goal-tag {
+  fill: var(--green); font-size: 11px; font-weight: 700;
+  stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; paint-order: stroke;
+}
+.chart .bar-good { fill: var(--green); }
+.chart .bar-short { fill: var(--red); opacity: 0.85; }
 .chart-empty { color: var(--text-3); text-align: center; padding: 26px 0 18px; font-size: 14px; }
 
 /* ---------- forms and buttons ---------- */
