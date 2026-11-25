@@ -13,7 +13,8 @@ Installed on the phone from Chrome via Share → Add to Home Screen; always open
 
 **Files:** `index.html`, `styles.css` (always dark), `js/app.js` (tabs, state), `js/store.js`
 (all data + calculations), `js/today.js`, `js/history.js`, `js/body.js` (graphs), `js/settings.js`
-(goal, step base, weight goals, backup), `js/goals.js` (weight goal bars), `sw.js` (offline), `manifest.webmanifest`, `icons/`.
+(goal, step base, weight goals, backup), `js/goals.js` (weight goal bars), `sw.js` (offline), `manifest.webmanifest`, `icons/` (drawn by `tools/make_icon.py`: the calorie ring as a
+happy cat with soft kitten ears; rerun it after changing the drawing, then bump `sw.js` VERSION).
 
 ## Rules
 
