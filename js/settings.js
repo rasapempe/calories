@@ -8,7 +8,7 @@ import {
 } from './store.js';
 import { fmt, fmtDec, fmtDate, toast, readNumber, fmtSleep } from './ui.js';
 
-export const APP_VERSION = '1.7';
+export const APP_VERSION = '1.8';
 
 export function renderSettings(el, ctx) {
   const s = getSettings();
@@ -79,7 +79,7 @@ export function renderSettings(el, ctx) {
       <input type="file" accept="application/json,.json,text/plain" data-file hidden>
     </section>
 
-    <p class="footnote">Calories · version ${APP_VERSION}</p>
+    <p class="footnote">NomNom · version ${APP_VERSION}</p>
   `;
 
   el.querySelector('[data-form="goals"]').onsubmit = (e) => {
@@ -175,7 +175,7 @@ function weightField(label, name, value, placeholder) {
 
 async function exportBackup(ctx) {
   const text = exportText();
-  const name = `calories-backup-${todayKey()}.json`;
+  const name = `nomnom-backup-${todayKey()}.json`;
   const candidates = [
     new File([text], name, { type: 'application/json' }),
     new File([text], name, { type: 'text/plain' }),

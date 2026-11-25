@@ -1,4 +1,8 @@
-# CLAUDE.md — Calories app
+# CLAUDE.md — NomNom app
+
+The app is called NomNom (renamed from "Calories" in version 1.8). Only the shown name changed: the
+web address (rasapempe.github.io/calories, repo rasapempe/calories) and the storage key
+`calorie-tracker-data` stay as they are, so saved data and backups keep working.
 
 Personal calorie, steps, weight and measurements tracker for an iPhone. The owner does not code:
 explain in plain words and keep answers short.

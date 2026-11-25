@@ -1,6 +1,6 @@
 {
-  "name": "Calories",
-  "short_name": "Calories",
+  "name": "NomNom",
+  "short_name": "NomNom",
   "description": "Daily calories, steps, weight and measurements.",
   "start_url": "./",
   "scope": "./",
