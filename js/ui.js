@@ -78,41 +78,49 @@ function arcPath(c, r, from, sweep) {
   return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
 }
 
-/**
- * Ring for a day: green = eaten within budget, red tip = how far over. Grey only = nothing logged.
- * s = daySummary(); size and stroke in px.
- */
-export function ringSVG(s, size, stroke) {
-  const c = size / 2;
-  const r = (size - stroke) / 2;
-  const track = `<path d="${arcPath(c, r, START, ARC)}" class="ring-track" stroke-width="${stroke}"/>`;
-  let fill = '';
-  if (s.hasFood) {
-    const budget = Math.max(s.budget, 1);
-    if (s.eaten <= budget) {
-      const sweep = (ARC * s.eaten) / budget;
-      if (sweep > 0.5) fill = `<path d="${arcPath(c, r, START, sweep)}" class="ring-green" stroke-width="${stroke}"/>`;
-    } else {
-      const green = (ARC * budget) / s.eaten;
-      fill = `<path d="${arcPath(c, r, START, ARC)}" class="ring-red" stroke-width="${stroke}"/>`
-        + (green > 0.5 ? `<path d="${arcPath(c, r, START, green)}" class="ring-green" stroke-width="${stroke}"/>` : '');
-    }
+/** Calorie arcs: green = eaten within budget, red = how far over. Nothing logged = track only. */
+function calorieArcs(s, c, r, stroke) {
+  let html = `<path d="${arcPath(c, r, START, ARC)}" class="ring-track" stroke-width="${stroke}"/>`;
+  if (!s.hasFood) return html;
+  const budget = Math.max(s.budget, 1);
+  if (s.eaten <= budget) {
+    const sweep = (ARC * s.eaten) / budget;
+    if (sweep > 0.5) html += `<path d="${arcPath(c, r, START, sweep)}" class="ring-green cal-arc" stroke-width="${stroke}"/>`;
+  } else {
+    const green = (ARC * budget) / s.eaten;
+    html += `<path d="${arcPath(c, r, START, ARC)}" class="ring-red cal-arc" stroke-width="${stroke}"/>`;
+    if (green > 0.5) html += `<path d="${arcPath(c, r, START, green)}" class="ring-green cal-arc" stroke-width="${stroke}"/>`;
   }
-  return `<svg class="ring" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">${track}${fill}</svg>`;
+  return html;
 }
 
-/** Sleep ring for the History calendar: filled by sleep ÷ goal; green when reached, red when short. */
-export function sleepRingSVG(sl, size, stroke) {
-  const c = size / 2;
-  const r = (size - stroke) / 2;
+/** Sleep arc: filled by sleep ÷ goal; green when the goal was reached, red when short. */
+function sleepArcs(sl, c, r, stroke) {
   let html = `<path d="${arcPath(c, r, START, ARC)}" class="ring-track" stroke-width="${stroke}"/>`;
-  if (sl.min !== null) {
-    const sweep = ARC * Math.min(sl.min / Math.max(sl.goal, 1), 1);
-    const cls = sl.status === 'good' ? 'ring-green' : 'ring-red';
-    if (sweep > 0.5) html += `<path d="${arcPath(c, r, START, sweep)}" class="${cls}" stroke-width="${stroke}"/>`;
-    html += `<text x="${c}" y="${c + 3.5}" text-anchor="middle" class="ring-txt">${fmtSleepShort(sl.min)}</text>`;
-  }
-  return `<svg class="ring" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">${html}</svg>`;
+  if (sl.min === null) return html;
+  const sweep = ARC * Math.min(sl.min / Math.max(sl.goal, 1), 1);
+  const cls = sl.status === 'good' ? 'ring-green' : 'ring-red';
+  if (sweep > 0.5) html += `<path d="${arcPath(c, r, START, sweep)}" class="${cls} sleep-arc" stroke-width="${stroke}"/>`;
+  return html;
+}
+
+const svg = (size, inner) =>
+  `<svg class="ring" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">${inner}</svg>`;
+
+/** Big calorie ring (Today). s = daySummary(); size and stroke in px. */
+export function ringSVG(s, size, stroke) {
+  return svg(size, calorieArcs(s, size / 2, (size - stroke) / 2, stroke));
+}
+
+/** History calendar: calories on the outer ring, sleep on a thinner ring inside it. */
+export function dayRingsSVG(s, sl, size) {
+  const outer = 4;
+  const inner = 3.5;
+  const gap = 2;
+  const c = size / 2;
+  const rOut = (size - outer) / 2;
+  const rIn = rOut - outer / 2 - gap - inner / 2;
+  return svg(size, calorieArcs(s, c, rOut, outer) + sleepArcs(sl, c, rIn, inner));
 }
 
 /* ---------- bottom sheet ---------- */

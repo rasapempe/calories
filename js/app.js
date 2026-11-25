@@ -18,18 +18,12 @@ const state = {
   followToday: true, // the Today screen moves on to the new day after midnight
   historyMonth: { year: now.getFullYear(), month: now.getMonth() },
   bodyRange: '3m',
-  historyMode: 'calories', // or 'sleep'
 };
 
 const ctx = {
   get date() { return state.date; },
   get historyMonth() { return state.historyMonth; },
   get bodyRange() { return state.bodyRange; },
-  get historyMode() { return state.historyMode; },
-  setHistoryMode(mode) {
-    state.historyMode = mode;
-    render();
-  },
   refresh: render,
   goTab: (tab) => showTab(tab),
   currentDay() {

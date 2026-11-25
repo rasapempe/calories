@@ -31,6 +31,6 @@ Installed on the phone from Chrome via Share → Add to Home Screen; always open
   that day (70 kg until one exists).
 - Day color: green if eaten ≤ budget, red if over, grey if no food entered.
 - Sleep: minutes stored on the day you woke up (`day.sleep`); green if ≥ that day's sleep goal, red if
-  less. History has a Calories | Sleep switch; Body has a sleep graph.
+  less. History calendar: outer ring calories, inner ring sleep; Body has nightly sleep bars.
 - Weight goals: overall = start weight → goal weight; week (Mon–Sun) / month = last weight before the
   period → latest weight in it, against the weekly/monthly kg. Losing unless goal > start.
