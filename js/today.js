@@ -8,7 +8,9 @@ import {
   daySummary, foodList, addFood, removeFood, undoRemoveFood, setSteps, todayKey, addDays,
   weightOn, stepCalories, DEFAULT_WEIGHT, sleepOn, setSleep, fastOn, setFast,
 } from './store.js';
-import { fmt, fmtDay, fmtTime, ringSVG, openSheet, toast, readNumber, readSleep, fmtDec, fmtSleep } from './ui.js';
+import {
+  fmt, fmtDay, fmtTime, ringSVG, openSheet, toast, readNumber, fmtDec, fmtSleep, formatSleepDigits, sleepFromDigits,
+} from './ui.js';
 import { goalProgress, shortGoalsCard } from './goals.js';
 
 function title(k) {
@@ -74,15 +76,8 @@ export function renderToday(el, ctx) {
     </form>
 
     <form class="card add-form sleep-form" autocomplete="off">
-      <input id="sleep-in" type="text" inputmode="decimal" placeholder="Add sleep, e.g. 7.30" aria-label="Sleep">
+      <input id="sleep-in" type="text" inputmode="numeric" placeholder="Add sleep" aria-label="Sleep, hours and minutes">
       <button type="submit" class="btn-primary btn-green">Add</button>
-      ${sl.min === null ? '' : `
-        <div class="entry-status">
-          <span class="${sl.band}">${moonIcon()}</span>
-          <span class="entry-text">${isToday ? 'Last night' : 'The night before'}
-            <b class="${sl.band}">${fmtSleep(sl.min)}</b> · goal ${fmtSleep(sl.goal)}</span>
-          <button type="button" class="row-del" data-act="sleep-del" aria-label="Remove sleep">${xIcon()}</button>
-        </div>`}
     </form>
 
     <div class="card add-form fast-form">
@@ -100,6 +95,14 @@ export function renderToday(el, ctx) {
           <button class="row-del" data-del="${f.id}" aria-label="Delete ${f.kcal} kcal">${xIcon()}</button>
         </div>`).join('') : `<div class="empty">Nothing added ${isToday ? 'yet today' : 'for this day'}.</div>`}
     </section>
+
+    ${sl.min === null ? '' : `
+      <section class="card entry-status">
+        <span class="${sl.band}">${moonIcon()}</span>
+        <span class="entry-text">${isToday ? 'Last night' : 'The night before'}
+          <b class="${sl.band}">${fmtSleep(sl.min)}</b> · goal ${fmtSleep(sl.goal)}</span>
+        <button type="button" class="row-del" data-act="sleep-del" aria-label="Remove sleep">${xIcon()}</button>
+      </section>`}
   `;
 
   el.querySelector('[data-act="prev"]').onclick = () => ctx.setDate(addDays(k, -1));
@@ -132,13 +135,22 @@ export function renderToday(el, ctx) {
   // Sleep: one number per night; adding again replaces it (Undo brings the old one back).
   const sleepForm = el.querySelector('.sleep-form');
   const sleepIn = el.querySelector('#sleep-in');
+  // Digits only; the colon appears after the first digit ("730" → 7:30, "1030" → 10:30).
+  let sleepDigits = '';
+  sleepIn.addEventListener('input', (e) => {
+    let d = sleepIn.value.replace(/\D/g, '').slice(0, 4);
+    // Backspace right after the automatic colon removes the digit before it too.
+    if ((e.inputType || '').startsWith('delete') && d === sleepDigits) d = d.slice(0, -1);
+    sleepDigits = d;
+    sleepIn.value = formatSleepDigits(d);
+  });
   sleepForm.onsubmit = (e) => {
     e.preventDefault();
-    const min = readSleep(sleepIn.value);
+    const min = sleepFromDigits(sleepIn.value.replace(/\D/g, '').slice(0, 4));
     if (min === null || min < 1 || min > 1440) {
       sleepIn.classList.add('shake');
       setTimeout(() => sleepIn.classList.remove('shake'), 400);
-      toast('Type sleep like 7.30 (7 h 30 min)');
+      toast('Type hours and minutes, like 730 for 7:30');
       return;
     }
     const day = ctx.currentDay();

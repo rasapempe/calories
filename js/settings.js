@@ -8,7 +8,7 @@ import {
 } from './store.js';
 import { fmt, fmtDec, fmtDate, toast, readNumber, fmtSleep } from './ui.js';
 
-export const APP_VERSION = '1.5';
+export const APP_VERSION = '1.6';
 
 export function renderSettings(el, ctx) {
   const s = getSettings();

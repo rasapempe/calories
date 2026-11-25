@@ -15,7 +15,7 @@
   --red-bg: rgba(255, 69, 58, 0.2);
   --orange: #ff9f0a;
   --yellow: #ffd60a;
-  --purple: #bf5af2;
+  --purple: #8b84c8;  /* muted, cool violet (fasting button) */
   --accent: #64d2ff;
   --accent-ink: #00263a;
   --radius: 18px;
@@ -113,9 +113,9 @@ button { touch-action: manipulation; cursor: pointer; }
 
 /* ---------- Today ---------- */
 
-.budget-line { font-size: 17px; color: var(--text); }
-.budget-line b { font-variant-numeric: tabular-nums; }
-.budget-line .muted { font-size: 14px; margin-left: 4px; }
+.budget-line { font-size: 14px; color: var(--text-2); }
+.budget-line b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.budget-line .muted { margin-left: 4px; }
 
 .ring-row {
   display: grid;
@@ -146,7 +146,7 @@ button { touch-action: manipulation; cursor: pointer; }
 .ring-red { stroke: var(--red); }
 .ring-orange { stroke: var(--orange); }
 .ring-yellow { stroke: var(--yellow); }
-.ring-purple { stroke: var(--purple); }
+.ring .fast-dot { fill: var(--green); }
 
 .add-form { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; }
 .add-form input {
@@ -162,7 +162,7 @@ button { touch-action: manipulation; cursor: pointer; }
 .add-form input::placeholder { color: var(--text-3); font-weight: 500; font-size: 18px; }
 .add-form .btn-primary, .add-form .btn-secondary { min-width: 88px; height: 52px; }
 .btn-primary.btn-green { background: var(--green); color: #00290d; }
-.btn-primary.btn-purple { background: var(--purple); color: #26003a; }
+.btn-primary.btn-purple { background: var(--purple); color: #16132b; }
 /* fasting: looks like an input but is only a label; the button marks the day */
 .fake-input {
   flex: 1; min-width: 0;
@@ -172,11 +172,10 @@ button { touch-action: manipulation; cursor: pointer; }
   font-size: 18px; font-weight: 500; color: var(--text-3);
 }
 .fake-input.on { color: var(--purple); font-weight: 600; }
-/* line under the sleep field once a night is entered */
+/* last card on Today: the night's sleep, with × to remove it */
 .entry-status {
-  flex-basis: 100%;
   display: flex; align-items: center; gap: 8px;
-  padding: 0 4px 0 6px; margin-top: -2px;
+  padding: 6px 8px 6px 16px;
   font-size: 15px; color: var(--text-2);
 }
 .entry-status > span:first-child { display: grid; place-items: center; }

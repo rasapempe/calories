@@ -54,20 +54,28 @@ export function fmtSleep(min) {
   return m ? `${h} h ${m} min` : `${h} h`;
 }
 
-/**
- * Typed sleep → minutes, or null if it can't be read.
- * "7.30", "7,30", "7:30", "7 30", "7h30" = 7 h 30 min (two digits after the dot are minutes);
- * "7.5" = 7½ h; "7" = 7 h.
+/*
+ * Sleep is typed as digits only; the colon is placed automatically.
+ * 1–3 digits: the first is the hours ("7" → "7:", "730" → "7:30");
+ * 4 digits: the first two are the hours ("1030" → "10:30").
  */
-export function readSleep(str) {
-  const s = String(str ?? '').trim().toLowerCase().replace(/\s*(min|m)$/, '');
-  let m = s.match(/^(\d{1,2})\s*h?$/);
-  if (m) return Number(m[1]) * 60;
-  m = s.match(/^(\d{1,2})\s*(?:[.,:]|h|\s)\s*(\d{2})$/) || s.match(/^(\d{1,2})\s*h\s*(\d)$/);
-  if (m) return Number(m[2]) < 60 ? Number(m[1]) * 60 + Number(m[2]) : null;
-  m = s.match(/^(\d{1,2})[.,](\d)$/);
-  if (m) return Math.round((Number(m[1]) + Number(m[2]) / 10) * 60);
-  return null;
+function splitSleepDigits(d) {
+  return d.length === 4 ? [d.slice(0, 2), d.slice(2)] : [d.slice(0, 1), d.slice(1)];
+}
+
+/** Digits typed so far → what the field shows ("" / "7:" / "7:3" / "7:30" / "10:30"). */
+export function formatSleepDigits(d) {
+  if (!d) return '';
+  const [h, m] = splitSleepDigits(d);
+  return `${h}:${m}`;
+}
+
+/** Digits → minutes ("730" → 450, "8" → 480), or null if the minutes are 60 or more. */
+export function sleepFromDigits(d) {
+  if (!d) return null;
+  const [h, m] = splitSleepDigits(d);
+  const min = m ? Number(m) : 0;
+  return min < 60 ? Number(h) * 60 + min : null;
 }
 
 /** 450 → "7:30" */
@@ -128,20 +136,17 @@ export function ringSVG(s, size, stroke) {
 }
 
 /**
- * History calendar: calories on the outer ring, sleep on the middle ring, and a small purple
- * inner ring on days with intermittent fasting (nothing drawn when not fasted).
+ * History calendar: calories on the outer ring, sleep on the inner ring, and a filled green dot
+ * in the middle on days with intermittent fasting (nothing drawn when not fasted).
  */
 export function dayRingsSVG(s, sl, fasted, size) {
   const outer = 4;
   const mid = 3.5;
-  const inner = 3;
   const gap = 1.5;
   const c = size / 2;
   const rOut = (size - outer) / 2;
   const rMid = rOut - outer / 2 - gap - mid / 2;
-  const rIn = rMid - mid / 2 - gap - inner / 2;
-  const fast = fasted
-    ? `<path d="${arcPath(c, rIn, START, ARC)}" class="ring-purple fast-arc" stroke-width="${inner}"/>` : '';
+  const fast = fasted ? `<circle cx="${c}" cy="${c}" r="5.5" class="fast-dot"/>` : '';
   return svg(size, calorieArcs(s, c, rOut, outer) + sleepArcs(sl, c, rMid, mid) + fast);
 }
 

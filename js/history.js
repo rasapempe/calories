@@ -1,8 +1,8 @@
 /*
  * history.js — month calendar showing calories, sleep and fasting together.
  * Each day: outer ring = calories (green within budget, red tip over, grey empty),
- * middle ring = sleep (filled by sleep ÷ goal; green / yellow / orange / red, grey not entered),
- * small inner ring = intermittent fasting (purple when done, nothing when not).
+ * inner ring = sleep (filled by sleep ÷ goal; green / yellow / orange / red, grey not entered),
+ * dot in the middle = intermittent fasting (green when done, nothing when not).
  * Week column: calories under/over + average sleep. Tapping a day opens it on the Today screen.
  */
 
@@ -71,7 +71,7 @@ export function renderHistory(el, ctx) {
         <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span><span>Week</span>
       </div>
       ${rows}
-      <div class="cal-legend">Outer ring: calories · Middle: sleep · Inner: <span class="purple">fasting</span></div>
+      <div class="cal-legend">Outer ring: calories · Inner ring: sleep · Dot: fasting</div>
     </section>
     <section class="card month-sum">
       <div class="sum-title">Calories</div>
