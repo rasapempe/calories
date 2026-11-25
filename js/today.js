@@ -9,7 +9,8 @@ import {
   weightOn, stepCalories, DEFAULT_WEIGHT, sleepOn, setSleep, fastOn, setFast,
 } from './store.js';
 import {
-  fmt, fmtDay, fmtTime, ringSVG, openSheet, toast, readNumber, fmtDec, fmtSleep, formatSleepDigits, sleepFromDigits,
+  fmt, fmtDay, fmtTime, ringSVG, openSheet, toast, readNumber, fmtDec, fmtSleep, fmtSleepShort, formatSleepDigits,
+  sleepFromDigits,
 } from './ui.js';
 import { goalProgress, shortGoalsCard } from './goals.js';
 
@@ -29,10 +30,6 @@ export function renderToday(el, ctx) {
   const sl = sleepOn(k);
   const fasted = fastOn(k);
 
-  const budgetNote = s.burned > 0
-    ? `<span class="muted">goal ${fmt(s.goal)} + steps ${fmt(s.burned)}</span>`
-    : `<span class="muted">daily goal</span>`;
-
   let stepsSub = 'tap to add';
   if (s.steps !== null) stepsSub = s.burned > 0 ? `+${fmt(s.burned)} kcal` : `under ${fmt(s.base)}`;
 
@@ -48,7 +45,7 @@ export function renderToday(el, ctx) {
     ${isToday ? '' : '<button class="pill" data-act="today">Back to today</button>'}
 
     <section class="card summary">
-      <div class="budget-line">Budget <b>${fmt(s.budget)}</b> ${budgetNote}</div>
+      <div class="budget-line">Budget <b>${fmt(s.budget)}</b></div>
       <div class="ring-row">
         <div class="stat">
           <div class="stat-label">Eaten</div>
@@ -72,12 +69,13 @@ export function renderToday(el, ctx) {
 
     <form class="card add-form" autocomplete="off">
       <input id="kcal" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Add calories" aria-label="Calories">
-      <button type="submit" class="btn-primary">Add</button>
+      <button type="submit" class="btn-primary btn-green">Add</button>
     </form>
 
     <form class="card add-form sleep-form" autocomplete="off">
-      <input id="sleep-in" type="text" inputmode="numeric" placeholder="Add sleep" aria-label="Sleep, hours and minutes">
-      <button type="submit" class="btn-primary btn-green">Add</button>
+      <input id="sleep-in" type="text" inputmode="numeric" placeholder="${sl.min === null ? 'Add sleep' : fmtSleepShort(sl.min)}"
+        aria-label="Sleep, hours and minutes">
+      <button type="submit" class="btn-primary">Add</button>
     </form>
 
     <div class="card add-form fast-form">

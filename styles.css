@@ -115,7 +115,6 @@ button { touch-action: manipulation; cursor: pointer; }
 
 .budget-line { font-size: 14px; color: var(--text-2); }
 .budget-line b { font-weight: 600; font-variant-numeric: tabular-nums; }
-.budget-line .muted { margin-left: 4px; }
 
 .ring-row {
   display: grid;
